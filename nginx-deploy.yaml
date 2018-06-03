@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment-1
+  namespace: k8s-user-60
+  labels:
+    app: nginx
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  minReadySeconds: 5
+  template:
+    metadata:
+      name: nginx-pod-3
+      namespace: k8s-user-60
+      labels:
+        app: nginx
+        env: python
+    spec:
+      containers:
+        - name: nginx
+          image: gohiei/reverse-proxy:0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+              protocol: TCP
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "128m"
+            limits:
+              memory: "200Mi"
+              cpu: "200m"
+
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: nginx-hpa
+  namespace: k8s-user-60
+spec:
+  maxReplicas: 10
+  minReplicas: 1
+  scaleTargetRef:
+    # for old k8s cluster:
+    # apiVersion: extensions/v1beta1
+    apiVersion: apps/v1
+    kind: Deployment
+    name: nginx-deployment-1
+  targetCPUUtilizationPercentage: 50
